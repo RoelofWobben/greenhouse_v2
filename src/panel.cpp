@@ -51,7 +51,7 @@ int PanelSystem::getScrollOffset() const {
 }
 
 // Wordt aangeroepen zodra er een MQTT-bericht binnenkomt.
-void PanelSystem::mqttCallback(char* topic, byte* payload, unsigned int length) {
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
   String message;
   for (unsigned int i = 0; i < length; i++) {
     message += (char)payload[i];
@@ -65,7 +65,7 @@ void PanelSystem::mqttCallback(char* topic, byte* payload, unsigned int length) 
   if (String(topic) == lightPanel.mqttStatusTopic) {
     LightState confirmed = (message == "ON") ? STATE_ON : STATE_OFF;
     panels.confirmState(lightPanel, confirmed);
-    drawPanels();
+    panels.drawPanels();
   }
 }
 
@@ -127,7 +127,7 @@ void PanelSystem::drawPanels() {
 }
 
 
-void handlePanelTouch(Panel& panel) {
+void PanelSystem::handlePanelTouch(Panel& panel) {
   if (panel.state == STATE_WAIT) return;  // al bezig, negeer nieuwe tikken
 
   RectButton onButton = panels.getOnButton(panel);

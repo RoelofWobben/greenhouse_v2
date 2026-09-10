@@ -113,12 +113,14 @@ public:
   void publishRequest(const Panel& panel, LightState requested);
   void drawStatusCard(const Panel& panel, const uint16_t* iconOn, const uint16_t* iconOff);
   void checkAllTimeouts();
-  void mqttCallback(char* topic, byte* payload, unsigned int length);
-
+  
   M5Canvas& getCanvas();
 
   
 };
+
+void mqttCallback(char* topic, byte* payload, unsigned int length);
+
 
 extern PanelSystem panels;
 extern ScrollSystem scroller;
