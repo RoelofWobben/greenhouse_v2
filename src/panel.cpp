@@ -12,6 +12,8 @@
 int tabBarY = 200;
 int tabBarHeight = 40;
 
+Screen currentScreen = SCREEN_BEDIENING;  
+
 // drie panelen -- let op: geen "status"-bool meer los, die zit nu IN de Panel
 // (state, previousState, waitStartMillis)
 Panel lightPanel = { 10, 10, 300, 100, "Light", "On", "Off", "...", "greenhouse/light/set", "greenhouse/light/status" };
@@ -48,6 +50,53 @@ int PanelSystem::getScrollOffset() const {
   return scrollOffSet;
 }
 
+// Wordt aangeroepen zodra er een MQTT-bericht binnenkomt.
+void PanelSystem::mqttCallback(char* topic, byte* payload, unsigned int length) {
+  String message;
+  for (unsigned int i = 0; i < length; i++) {
+    message += (char)payload[i];
+  }
+
+  Serial.print("M5 ontving op ");
+  Serial.print(topic);
+  Serial.print(": ");
+  Serial.println(message);
+
+  if (String(topic) == lightPanel.mqttStatusTopic) {
+    LightState confirmed = (message == "ON") ? STATE_ON : STATE_OFF;
+    panels.confirmState(lightPanel, confirmed);
+    drawPanels();
+  }
+}
+
+
+// Checkt voor alle panelen of een timeout is verstreken; herTekent indien nodig.
+void PanelSystem::checkAllTimeouts() {
+  bool anyTimedOut = false;
+
+  if (panels.checkTimeout(lightPanel)) anyTimedOut = true;
+  //if (panels.checkTimeout(pompPanel)) anyTimedOut = true;
+  //if (panels.checkTimeout(windowPanel)) anyTimedOut = true;
+
+  if (anyTimedOut) {
+    drawPanels();
+  }
+}
+
+
+void PanelSystem::drawStatusCard(const Panel& panel, const uint16_t* iconOn, const uint16_t* iconOff) {
+
+
+  const uint16_t* icon = (panel.state == STATE_OFF) ? iconOff : iconOn;
+  canvas.pushImage(panel.x + 20, panel.y + 10 - scrollOffSet, 32, 32, icon, 0xFFFF);
+
+  canvas.setTextColor(WHITE, panelColor);
+  canvas.setTextSize(2);
+  canvas.setTextDatum(middle_left);
+  canvas.drawString(panel.label, panel.x + 62, panel.y + 26 - scrollOffSet);
+}
+
+
 // Publiceert het GEVRAAGDE commando (nog geen bevestigde status)
 void PanelSystem::publishRequest(const Panel& panel, LightState requested) {
   if (panel.mqttTopic == nullptr) return;
@@ -62,19 +111,19 @@ void PanelSystem::publishRequest(const Panel& panel, LightState requested) {
 
 
 void PanelSystem::drawPanels() {
-  panels.getCanvas().fillScreen(BLACK);
+  getCanvas().fillScreen(BLACK);
 
-  panels.drawPanel(lightPanel, lightIconOn, lightIcon);
-  panels.drawButtons(lightPanel);
+  drawPanel(lightPanel, lightIconOn, lightIcon);
+  drawButtons(lightPanel);
 
-  panels.drawPanel(pompPanel, pumpIconOn, pumpIconOff);
-  panels.drawButtons(pompPanel);
+  drawPanel(pompPanel, pumpIconOn, pumpIconOff);
+  drawButtons(pompPanel);
 
-  panels.drawPanel(windowPanel, windowIconOpen, windowIconClosed);
-  panels.drawButtons(windowPanel);
+  drawPanel(windowPanel, windowIconOpen, windowIconClosed);
+  drawButtons(windowPanel);
 
   drawTabBar();
-  panels.flush();
+  flush();
 }
 
 

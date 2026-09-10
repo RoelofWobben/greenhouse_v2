@@ -1,6 +1,7 @@
 #pragma once
 #include <M5Unified.h>
-#include "panel.h"
+
+class PanelSystem; 
  
 class ScrollSystem {
 private:
@@ -9,6 +10,6 @@ private:
   bool isDragging = false;
  
 public:
-  void handleScroll(PanelSystem& panels, void (*redrawAll)());
+  void handleScroll(PanelSystem& panels, std::function<void()> redrawAll);
 };
  

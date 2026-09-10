@@ -1,6 +1,6 @@
 #include "scroll.h"
 
-void ScrollSystem::handleScroll(PanelSystem& panels, void (*redrawAll)()) {
+void ScrollSystem::handleScroll(PanelSystem& panels, std::function<void()> redrawAll) {
   if (M5.Touch.getCount() == 0) {
     isDragging = false;
     return;

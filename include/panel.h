@@ -1,7 +1,7 @@
 #pragma once
 #include <M5Unified.h>
 
-#include "scroll.h"
+class ScrollSystem; 
 
 struct RectButton {
   int x, y, w, h;
@@ -64,7 +64,7 @@ enum Screen {
   SCREEN_BEDIENING,
 };
 
-Screen currentScreen = SCREEN_BEDIENING;
+extern Screen currentScreen;
 
 
 
@@ -111,6 +111,9 @@ public:
   void drawCurrentScreen();
   bool isTabTouched(int tabIndex);
   void publishRequest(const Panel& panel, LightState requested);
+  void drawStatusCard(const Panel& panel, const uint16_t* iconOn, const uint16_t* iconOff);
+  void checkAllTimeouts();
+  void mqttCallback(char* topic, byte* payload, unsigned int length);
 
   M5Canvas& getCanvas();
 
