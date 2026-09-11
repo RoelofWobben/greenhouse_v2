@@ -156,6 +156,11 @@ bool PanelSystem::isTabTouched(int tabIndex) {
 
   if (!detail.wasPressed()) return false;
 
+  Serial.print("Touch bij x=");
+  Serial.print(detail.x);
+  Serial.print(" y=");
+  Serial.println(detail.y);
+
   int tabX = tabIndex * 160;
 
   return (detail.x >= tabX && detail.x <= tabX + 160 && detail.y >= tabBarY && detail.y <= tabBarY + tabBarHeight);
