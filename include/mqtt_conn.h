@@ -8,6 +8,7 @@
 
 extern WiFiClientSecure espClientM5;
 extern PubSubClient MqttClient;
+extern const char* MQTT_SERVER; 
 
 bool connectMqtt();
 void ensureMqttConnected();

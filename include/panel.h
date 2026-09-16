@@ -78,7 +78,10 @@ private:
 
   int scrollOffSet = 0;
   int minScrollOffSet = 0;
-  int maxScrollOffSet = 110;
+  int maxScrollOffSetBediening = 150; 
+  int maxScrollOffSetStatus = 200 ; 
+  
+  int maxScrollOffSet = (currentScreen == SCREEN_STATUS )? maxScrollOffSetStatus :  maxScrollOffSetBediening; 
 
   static const unsigned long TIMEOUT_MS = 5000;
 
@@ -91,7 +94,7 @@ public:
   void setScrollOffset(int newOffset);
   int getScrollOffset() const;
 
-  void drawPanel(const Panel& panel, const uint16_t* iconOn, const uint16_t* iconOff);
+  void drawPanel(const Panel& panel, bool isOn, const uint16_t* iconOn, const uint16_t* iconOff);
   void drawSingleButton(const RectButton& button, uint16_t color);
   RectButton getOnButton(const Panel& panel);
   RectButton getOffButton(const Panel& panel);
@@ -113,6 +116,8 @@ public:
   void publishRequest(const Panel& panel, LightState requested);
   void drawStatusCard(const Panel& panel, const uint16_t* iconOn, const uint16_t* iconOff);
   void checkAllTimeouts();
+
+  void drawStatusText(const Panel& panel, bool isOk, const char* detail);
   
   M5Canvas& getCanvas();
 

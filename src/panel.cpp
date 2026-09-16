@@ -8,6 +8,10 @@
 #include "light_off.h"
 #include "light_on.h"
 #include "mqtt_conn.h"
+#include "wifi_connected.h"
+#include "wifi_disconnected.h"
+#include "mqtt_connected.h"
+#include "mqtt_disconnected.h"
 
 int tabBarY = 200;
 int tabBarHeight = 40;
@@ -21,7 +25,9 @@ Panel pompPanel = { 10, 130, 300, 100, "Pomp", "On", "Off", "...", nullptr, null
 Panel windowPanel = { 10, 250, 300, 100, "Window", "Open", "Closed", "...", nullptr, nullptr };
 
 // Meerdere panelen voor de status 
-Panel wifiStatusPanel = {10,10,300,100, "WiFi","verbonden", "Niet verbonden", nullptr, nullptr, nullptr};
+Panel wifiStatusPanel = {10,10,300,100, "WiFi","Connected", "Not connected", nullptr, nullptr, nullptr};
+Panel mqttStatusPanel = {10,130, 300,100, "MQTT", "Connected", "Not connected", nullptr, nullptr, nullptr};
+Panel lightStatusPanel = {10,250,300,100, "Light", "On", "Off", nullptr, nullptr, nullptr};
 
 PanelSystem panels;
 ScrollSystem scroller;
@@ -88,7 +94,10 @@ void PanelSystem::drawStatusCard(const Panel& panel, const uint16_t* iconOn, con
 
 
   const uint16_t* icon = (panel.state == STATE_OFF) ? iconOff : iconOn;
-  canvas.pushImage(panel.x + 20, panel.y + 10 - scrollOffSet, 32, 32, icon, 0xFFFF);
+  
+  if (icon != nullptr) {
+    canvas.pushImage(panel.x + 20, panel.y + 10 - scrollOffSet, 32, 32, icon, 0xFFFF);
+  }
 
   canvas.setTextColor(WHITE, panelColor);
   canvas.setTextSize(2);
@@ -113,13 +122,13 @@ void PanelSystem::publishRequest(const Panel& panel, LightState requested) {
 void PanelSystem::drawPanels() {
   getCanvas().fillScreen(BLACK);
 
-  drawPanel(lightPanel, lightIconOn, lightIcon);
+  drawPanel(lightPanel, lightPanel.state == STATE_ON, lightIconOn, lightIcon);
   drawButtons(lightPanel);
 
-  drawPanel(pompPanel, pumpIconOn, pumpIconOff);
+  drawPanel(pompPanel, pompPanel.state == STATE_ON, pumpIconOn, pumpIconOff);
   drawButtons(pompPanel);
 
-  drawPanel(windowPanel, windowIconOpen, windowIconClosed);
+  drawPanel(windowPanel, windowPanel.state == STATE_ON, windowIconOpen, windowIconClosed);
   drawButtons(windowPanel);
 
   drawTabBar();
@@ -156,11 +165,6 @@ bool PanelSystem::isTabTouched(int tabIndex) {
 
   if (!detail.wasPressed()) return false;
 
-  Serial.print("Touch bij x=");
-  Serial.print(detail.x);
-  Serial.print(" y=");
-  Serial.println(detail.y);
-
   int tabX = tabIndex * 160;
 
   return (detail.x >= tabX && detail.x <= tabX + 160 && detail.y >= tabBarY && detail.y <= tabBarY + tabBarHeight);
@@ -181,14 +185,14 @@ void PanelSystem::handleTabtouch() {
   }
 }
 
-
-
-
-void PanelSystem::drawPanel(const Panel& panel, const uint16_t* iconOn, const uint16_t* iconOff) {
+void PanelSystem::drawPanel(const Panel& panel, bool isOn, const uint16_t* iconOn, const uint16_t* iconOff) {
   canvas.fillRoundRect(panel.x, panel.y - scrollOffSet, panel.w, panel.h, 12, panelColor);
 
-  const uint16_t* icon = (panel.state == STATE_OFF) ? iconOff : iconOn;
-  canvas.pushImage(panel.x + 20, panel.y + 10 - scrollOffSet, 32, 32, icon, 0xFFFF);
+  const uint16_t* icon = isOn ? iconOn : iconOff;
+  
+  if (icon != nullptr) {
+      canvas.pushImage(panel.x + 20, panel.y + 10 - scrollOffSet, 32, 32, icon, 0xFFFF);
+  }
 
   canvas.setTextColor(WHITE, panelColor);
   canvas.setTextSize(2);
@@ -196,25 +200,35 @@ void PanelSystem::drawPanel(const Panel& panel, const uint16_t* iconOn, const ui
   canvas.drawString(panel.label, panel.x + 62, panel.y + 26 - scrollOffSet);
 }
 
+void PanelSystem::drawStatusText(const Panel& panel, bool isOk, const char* detail){
+  canvas.setTextColor(isOk ? GREEN: RED, panelColor  );
+  canvas.setTextSize(2);
+  canvas.setTextDatum(top_left);
+  canvas.drawString(isOk? panel.textOn: panel.textOff, panel.x + 62, panel.y + 40 - scrollOffSet);
+
+  if (detail != nullptr) {
+    canvas.setTextColor(WHITE, panelColor);
+    canvas.drawString(detail, panel.x + 62, panel.y + 56 - scrollOffSet);
+  }
+}
+
+
 void PanelSystem::drawStatusScreen() {
 
   panels.getCanvas().fillScreen(BLACK);
 
-  panels.drawPanel(wifiStatusPanel, nullptr, nullptr);
-
-
-
-
-
+  bool wifiOk = (WiFi.status() == WL_CONNECTED);
+  String wifiIP = WiFi.localIP().toString(); 
+  drawPanel(wifiStatusPanel,wifiOk, wifiIconConnected, wifiIconDisconnected);
+  drawStatusText(wifiStatusPanel, wifiOk, wifiOk? wifiIP.c_str(): nullptr);
   
+  bool mqttOk = MqttClient.connected(); 
+  drawPanel(mqttStatusPanel, mqttOk, mqttIconConnected, wifiIconDisconnected);
+  drawStatusText(mqttStatusPanel, mqttOk, MQTT_SERVER); 
 
-  //bool mqttOk = (MqttClient.connected());
-  //drawStatusCard(130, "MQTT", mqttOk ? "Verbonden" : "Niet verbonden", nullptr, mqttOk ? GREEN : RED);
-
-  //bool lightOn = (lightPanel.state == STATE_ON);
-  //const uint16_t* lightIcon2 = lightOn ? lightIconOn : lightIcon;
-  //drawStatusCard(250, "Licht", lightOn ? "Aan" : "Uit", lightIcon2, lightOn ? GREEN : 0x39C7);
-
+  bool lightOk = (lightPanel.state == STATE_ON);
+  drawPanel(lightStatusPanel, lightOk, lightIconOn, lightIcon);
+  drawStatusText(lightStatusPanel, lightOk, nullptr);
 
   drawTabBar();
   panels.flush();

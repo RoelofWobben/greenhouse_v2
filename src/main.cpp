@@ -24,7 +24,6 @@ void loop() {
   M5.update();
 
   ensureMqttConnected();
-  MqttClient.loop(); 
 
   panels.handleTabtouch();
 
@@ -34,6 +33,9 @@ void loop() {
     panels.handlePanelTouch(lightPanel);
     panels.handlePanelTouch(pompPanel);
     panels.handlePanelTouch(windowPanel);
+  } else {
+    scroller.handleScroll(panels, [&]() {panels.drawStatusScreen();});
   }
   panels.checkAllTimeouts();
 }
+

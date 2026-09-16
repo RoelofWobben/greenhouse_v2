@@ -1,4 +1,4 @@
-pragma once
+#pragma once
 #include <cstdint>
 // 32x32 RGB565 bitmap - witte achtergrond = transparant (0xFFFF)
 const uint16_t wifiIconDisconnected[1024] = {
