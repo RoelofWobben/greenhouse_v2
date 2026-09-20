@@ -13,6 +13,7 @@
 #include "mqtt_connected.h"
 #include "mqtt_disconnected.h"
 
+
 int tabBarY = 200;
 int tabBarHeight = 40;
 
@@ -31,10 +32,6 @@ Panel lightStatusPanel = {10,250,300,100, "Light", "On", "Off", nullptr, nullptr
 
 PanelSystem panels;
 ScrollSystem scroller;
-
-
-
-
 
 PanelSystem::PanelSystem() : canvas(&M5.Display) {}
 
@@ -56,40 +53,6 @@ int PanelSystem::getScrollOffset() const {
   return scrollOffSet;
 }
 
-// Wordt aangeroepen zodra er een MQTT-bericht binnenkomt.
-void mqttCallback(char* topic, byte* payload, unsigned int length) {
-  String message;
-  for (unsigned int i = 0; i < length; i++) {
-    message += (char)payload[i];
-  }
-
-  Serial.print("M5 ontving op ");
-  Serial.print(topic);
-  Serial.print(": ");
-  Serial.println(message);
-
-  if (String(topic) == lightPanel.mqttStatusTopic) {
-    LightState confirmed = (message == "ON") ? STATE_ON : STATE_OFF;
-    panels.confirmState(lightPanel, confirmed);
-    panels.drawPanels();
-  }
-}
-
-
-// Checkt voor alle panelen of een timeout is verstreken; herTekent indien nodig.
-void PanelSystem::checkAllTimeouts() {
-  bool anyTimedOut = false;
-
-  if (panels.checkTimeout(lightPanel)) anyTimedOut = true;
-  //if (panels.checkTimeout(pompPanel)) anyTimedOut = true;
-  //if (panels.checkTimeout(windowPanel)) anyTimedOut = true;
-
-  if (anyTimedOut) {
-    drawPanels();
-  }
-}
-
-
 void PanelSystem::drawStatusCard(const Panel& panel, const uint16_t* iconOn, const uint16_t* iconOff) {
 
 
@@ -104,20 +67,6 @@ void PanelSystem::drawStatusCard(const Panel& panel, const uint16_t* iconOn, con
   canvas.setTextDatum(middle_left);
   canvas.drawString(panel.label, panel.x + 62, panel.y + 26 - scrollOffSet);
 }
-
-
-// Publiceert het GEVRAAGDE commando (nog geen bevestigde status)
-void PanelSystem::publishRequest(const Panel& panel, LightState requested) {
-  if (panel.mqttTopic == nullptr) return;
-
-  const char* payload = (requested == STATE_ON) ? "ON" : "OFF";
-  MqttClient.publish(panel.mqttTopic, payload);
-
-  Serial.print(panel.label);
-  Serial.print(" verzoek -> ");
-  Serial.println(payload);
-}
-
 
 void PanelSystem::drawPanels() {
   getCanvas().fillScreen(BLACK);
@@ -135,28 +84,6 @@ void PanelSystem::drawPanels() {
   flush();
 }
 
-
-void PanelSystem::handlePanelTouch(Panel& panel) {
-  if (panel.state == STATE_WAIT) return;  // al bezig, negeer nieuwe tikken
-
-  RectButton onButton = panels.getOnButton(panel);
-  RectButton offButton = panels.getOffButton(panel);
-
-  if (panel.state != STATE_ON && panels.isButtonTouched(onButton)) {
-    panels.requestState(panel);
-    panels.drawPanels();
-
-    panels.publishRequest(panel, STATE_ON);
-  }
-
-  if (panel.state != STATE_OFF && panels.isButtonTouched(offButton)) {
-    panels.requestState(panel);
-    panels.drawPanels();
-
-    panels.publishRequest(panel, STATE_OFF);
-  }
-}
-
 bool PanelSystem::isTabTouched(int tabIndex) {
 
   if (M5.Touch.getCount() == 0) return false;
@@ -169,8 +96,6 @@ bool PanelSystem::isTabTouched(int tabIndex) {
 
   return (detail.x >= tabX && detail.x <= tabX + 160 && detail.y >= tabBarY && detail.y <= tabBarY + tabBarHeight);
 }
-
-
 
 void PanelSystem::handleTabtouch() {
 
@@ -212,7 +137,6 @@ void PanelSystem::drawStatusText(const Panel& panel, bool isOk, const char* deta
   }
 }
 
-
 void PanelSystem::drawStatusScreen() {
 
   panels.getCanvas().fillScreen(BLACK);
@@ -234,7 +158,6 @@ void PanelSystem::drawStatusScreen() {
   panels.flush();
 }
 
-
 void PanelSystem::drawCurrentScreen() {
 
   if (currentScreen == SCREEN_STATUS) {
@@ -243,8 +166,6 @@ void PanelSystem::drawCurrentScreen() {
     drawPanels();
   }
 }
-
-
 
 void PanelSystem::drawTabBar() {
 
@@ -308,24 +229,6 @@ bool PanelSystem::isButtonTouched(const RectButton& button) {
 
   return (detail.x >= button.x && detail.x <= button.x + button.w &&
           detail.y >= button.y && detail.y <= button.y + button.h);
-}
-
-void PanelSystem::requestState(Panel& panel) {
-  panel.previousState = panel.state;
-  panel.state = STATE_WAIT;
-  panel.waitStartMillis = millis();
-}
-
-void PanelSystem::confirmState(Panel& panel, LightState confirmedState) {
-  panel.state = confirmedState;
-}
-
-bool PanelSystem::checkTimeout(Panel& panel) {
-  if (panel.state == STATE_WAIT && (millis() - panel.waitStartMillis > TIMEOUT_MS)) {
-    panel.state = panel.previousState;
-    return true;
-  }
-  return false;
 }
 
 M5Canvas& PanelSystem::getCanvas() {
