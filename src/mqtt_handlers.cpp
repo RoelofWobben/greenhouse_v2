@@ -18,4 +18,11 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     panels.confirmState(lightPanel, confirmed);
     panels.drawPanels();
   }
+
+  if (String(topic) == moistureStatusPanel.mqttStatusTopic) {
+    // Hier kun je de status van de vochtigheidssensor verwerken
+    // Bijvoorbeeld: als de sensor een waarde terugstuurt, kun je die hier gebruiken
+    Serial.print("Vochtigheidssensor status: ");
+    Serial.println(message);
+  }
 }

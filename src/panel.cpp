@@ -29,6 +29,7 @@ Panel windowPanel = { 10, 250, 300, 100, "Window", "Open", "Closed", "...", null
 Panel wifiStatusPanel = {10,10,300,100, "WiFi","Connected", "Not connected", nullptr, nullptr, nullptr};
 Panel mqttStatusPanel = {10,130, 300,100, "MQTT", "Connected", "Not connected", nullptr, nullptr, nullptr};
 Panel lightStatusPanel = {10,250,300,100, "Light", "On", "Off", nullptr, nullptr, nullptr};
+Panel moistureStatusPanel = {10,370,300,100, "Moisture", "OK", "Low", nullptr, nullptr, "greenhouse/sensor/moisture"};
 
 PanelSystem panels;
 ScrollSystem scroller;
@@ -153,6 +154,9 @@ void PanelSystem::drawStatusScreen() {
   bool lightOk = (lightPanel.state == STATE_ON);
   drawPanel(lightStatusPanel, lightOk, lightIconOn, lightIcon);
   drawStatusText(lightStatusPanel, lightOk, nullptr);
+
+  drawPanel(moistureStatusPanel, true, nullptr, nullptr);
+  drawStatusText(moistureStatusPanel, true, nullptr);
 
   drawTabBar();
   panels.flush();

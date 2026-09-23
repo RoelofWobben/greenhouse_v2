@@ -57,7 +57,8 @@ struct Panel {
 
 extern Panel windowPanel;
 extern Panel pompPanel;
-extern Panel lightPanel;  
+extern Panel lightPanel;
+extern Panel moistureStatusPanel;   
 
 enum Screen {
   SCREEN_STATUS,
