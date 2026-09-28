@@ -26,8 +26,7 @@ bool connectMqtt() {
     MqttClient.subscribe("greenhouse/light/status");
     bool subscribed = MqttClient.subscribe("greenhouse/sensor/moisture");
 
-    Serial.print("Moisture subscription: ");
-    Serial.println(subscribed ? "gelukt" : "mislukt");
+   
     return true;
   } else {
     Serial.print("MQTT verbinden mislukt, state: ");

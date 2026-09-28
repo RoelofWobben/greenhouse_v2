@@ -6,7 +6,8 @@
 #include "panel.h"
 #include "scroll.h"
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
 
   auto cfg = M5.config();
@@ -20,22 +21,29 @@ void setup() {
   panels.drawPanels();
 }
 
-void loop() {
+void loop()
+{
   M5.update();
 
   ensureMqttConnected();
 
+  MqttClient.loop();
+
   panels.handleTabtouch();
 
-  if (currentScreen == SCREEN_BEDIENING) {
-    scroller.handleScroll(panels, [&]() {panels.drawPanels();});
+  if (currentScreen == SCREEN_BEDIENING)
+  {
+    scroller.handleScroll(panels, [&]()
+                          { panels.drawPanels(); });
 
     panels.handlePanelTouch(lightPanel);
     panels.handlePanelTouch(pompPanel);
     panels.handlePanelTouch(windowPanel);
-  } else {
-    scroller.handleScroll(panels, [&]() {panels.drawStatusScreen();});
+  }
+  else
+  {
+    scroller.handleScroll(panels, [&]()
+                          { panels.drawStatusScreen(); });
   }
   panels.checkAllTimeouts();
 }
-

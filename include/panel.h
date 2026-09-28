@@ -65,6 +65,12 @@ enum Screen {
   SCREEN_BEDIENING,
 };
 
+enum MoistureLevel{
+  MOISTURE_DRY,
+  MOISTURE_GOOD, 
+  MOISTURE_WET
+};
+
 extern Screen currentScreen;
 
 
@@ -78,11 +84,6 @@ private:
   uint16_t waitColor = 0xFD20;
 
   int scrollOffSet = 0;
-  int minScrollOffSet = 0;
-  int maxScrollOffSetBediening = 150; 
-  int maxScrollOffSetStatus = 200 ; 
-  
-  int maxScrollOffSet = (currentScreen == SCREEN_STATUS )? maxScrollOffSetStatus :  maxScrollOffSetBediening; 
 
   static const unsigned long TIMEOUT_MS = 5000;
 
@@ -119,7 +120,9 @@ public:
   void checkAllTimeouts();
 
   void drawStatusText(const Panel& panel, bool isOk, const char* detail);
-  
+  void drawPanelThreeStates(const Panel& panel, int StateIndex, const uint16_t* icon0, const uint16_t* icon1, const uint16_t* icon2);
+
+
   M5Canvas& getCanvas();
 
   

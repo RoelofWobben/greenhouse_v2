@@ -26,10 +26,10 @@ Panel pompPanel = { 10, 130, 300, 100, "Pomp", "On", "Off", "...", nullptr, null
 Panel windowPanel = { 10, 250, 300, 100, "Window", "Open", "Closed", "...", nullptr, nullptr };
 
 // Meerdere panelen voor de status 
-Panel wifiStatusPanel = {10,10,300,100, "WiFi","Connected", "Not connected", nullptr, nullptr, nullptr};
-Panel mqttStatusPanel = {10,130, 300,100, "MQTT", "Connected", "Not connected", nullptr, nullptr, nullptr};
-Panel lightStatusPanel = {10,250,300,100, "Light", "On", "Off", nullptr, nullptr, nullptr};
-Panel moistureStatusPanel = {10,370,300,100, "Moisture", "OK", "Low", nullptr, nullptr, "greenhouse/sensor/moisture"};
+Panel wifiStatusPanel = {10, 8, 300, 84, "WiFi", "Connected", "Not connected", nullptr, nullptr, nullptr};
+Panel mqttStatusPanel = {10, 100, 300, 84, "MQTT", "Connected", "Not connected", nullptr, nullptr, nullptr};
+Panel lightStatusPanel = {10, 192, 300, 84, "Light", "On", "Off", nullptr, nullptr, nullptr};
+Panel moistureStatusPanel = {10, 284, 300, 84, "Moisture", "OK", "Low", nullptr, nullptr, "greenhouse/sensor/moisture"};
 
 PanelSystem panels;
 ScrollSystem scroller;
@@ -47,7 +47,12 @@ void PanelSystem::flush() {
 }
 
 void PanelSystem::setScrollOffset(int newOffset) {
-  scrollOffSet = constrain(newOffset, minScrollOffSet, maxScrollOffSet);
+  const int contentBottom = (currentScreen == SCREEN_STATUS)
+      ? moistureStatusPanel.y + moistureStatusPanel.h
+      : windowPanel.y + windowPanel.h;
+  const int statusScrollMargin = (currentScreen == SCREEN_STATUS) ? 0 : 120;
+  const int maxScrollOffset = max(0, contentBottom - tabBarY + statusScrollMargin);
+  scrollOffSet = constrain(newOffset, 0, maxScrollOffset);
 }
 
 int PanelSystem::getScrollOffset() const {
@@ -102,13 +107,30 @@ void PanelSystem::handleTabtouch() {
 
   if (isTabTouched(0) && currentScreen != SCREEN_STATUS) {
     currentScreen = SCREEN_STATUS;
+    setScrollOffset(0);
     drawCurrentScreen();
   }
 
   if (isTabTouched(1) && currentScreen != SCREEN_BEDIENING) {
     currentScreen = SCREEN_BEDIENING;
+    setScrollOffset(0);
     drawCurrentScreen();
   }
+}
+
+void PanelSystem::drawPanelThreeStates(const Panel& panel, int stateIndex, const uint16_t* icon0, const uint16_t* icon1, const uint16_t* icon2){
+  canvas.fillRoundRect(panel.x, panel.y -scrollOffSet, panel.w, panel.h, 12, panelColor); 
+  const uint16_t* icon = (stateIndex == 0) ? icon0 : (stateIndex == 1) ? icon1 : icon2;
+
+  if (icon != nullptr) {
+      canvas.pushImage(panel.x + 20, panel.y + 10 - scrollOffSet, 32, 32, icon, 0xFFFF);
+  } 
+
+  canvas.setTextColor(WHITE, panelColor);
+  canvas.setTextSize(2);
+  canvas.setTextDatum(middle_left);
+  canvas.drawString(panel.label, panel.x + 62, panel.y + 26 - scrollOffSet);
+
 }
 
 void PanelSystem::drawPanel(const Panel& panel, bool isOn, const uint16_t* iconOn, const uint16_t* iconOff) {
@@ -155,8 +177,21 @@ void PanelSystem::drawStatusScreen() {
   drawPanel(lightStatusPanel, lightOk, lightIconOn, lightIcon);
   drawStatusText(lightStatusPanel, lightOk, nullptr);
 
-  drawPanel(moistureStatusPanel, true, nullptr, nullptr);
-  drawStatusText(moistureStatusPanel, true, nullptr);
+  drawPanelThreeStates(moistureStatusPanel, currentMoistureLevel, nullptr , nullptr, nullptr);
+  String moistureText = currentMoistureLevel == MOISTURE_DRY
+      ? "Dry"
+      : currentMoistureLevel == MOISTURE_GOOD ? "Good" : "Wet";
+  if (lastMoistureValue != "-") {
+    moistureText += " (";
+    moistureText += lastMoistureValue;
+    moistureText += "%)";
+  }
+  canvas.setTextColor(WHITE, panelColor);
+  canvas.setTextSize(2);
+  canvas.setTextDatum(top_left);
+  canvas.drawString(moistureText.c_str(), moistureStatusPanel.x + 62,
+                    moistureStatusPanel.y + 48 - scrollOffSet);
+
 
   drawTabBar();
   panels.flush();
